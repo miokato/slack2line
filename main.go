@@ -51,6 +51,10 @@ func main() {
 	slack_token := os.Getenv("SLACK_TOKEN")
 	slack_outgoing_token := os.Getenv("SLACK_OUTGOING_TOKEN")
 	slack_url := os.Getenv("SLACK_URL")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
 	fmt.Println(slack_token, slack_outgoing_token)
 
 	bot, err := linebot.New(
@@ -88,5 +92,5 @@ func main() {
 			}
 		}
 	})
-	r.Run("localhost:3000")
+	r.Run(":" + port)
 }
