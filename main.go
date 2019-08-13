@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,7 +19,11 @@ type Payload struct {
 	Channel   string `json: "channel"`
 }
 
-func HttpPost(mes string, slack_url string) error {
+func postToSlack(mes string) error {
+	// slack_token := os.Getenv("SLACK_TOKEN")
+	// slack_outgoing_token := os.Getenv("SLACK_OUTGOING_TOKEN")
+	slack_url := os.Getenv("SLACK_URL")
+
 	payload := Payload{
 		Text:      mes,
 		Username:  "non",
@@ -29,6 +31,7 @@ func HttpPost(mes string, slack_url string) error {
 		IconURL:   "",
 		Channel:   "",
 	}
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -38,9 +41,8 @@ func HttpPost(mes string, slack_url string) error {
 	if err != nil {
 		return err
 	}
-	body, _ := ioutil.ReadAll(resp.Body)
+
 	defer resp.Body.Close()
-	fmt.Println(string(body))
 	return err
 }
 
@@ -58,14 +60,10 @@ func createBot() *linebot.Client {
 
 func main() {
 	line_user_id := os.Getenv("LINE_USER_ID")
-	slack_token := os.Getenv("SLACK_TOKEN")
-	slack_outgoing_token := os.Getenv("SLACK_OUTGOING_TOKEN")
-	slack_url := os.Getenv("SLACK_URL")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
-	fmt.Println(slack_token, slack_outgoing_token)
 
 	bot := createBot()
 
@@ -91,8 +89,7 @@ func main() {
 			if event.Type == linebot.EventTypeMessage {
 				switch message := event.Message.(type) {
 				case *linebot.TextMessage:
-					fmt.Println(message.Text)
-					HttpPost(message.Text, slack_url)
+					postToSlack(message.Text)
 				}
 			}
 		}
