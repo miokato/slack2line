@@ -11,7 +11,7 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
-type Payload struct {
+type slackMessageFormat struct {
 	Text      string `json:"text"`
 	Username  string `json: "username"`
 	IconEmoji string `json: "icon_emoji"`
@@ -19,25 +19,29 @@ type Payload struct {
 	Channel   string `json: "channel"`
 }
 
-func postToSlack(mes string) error {
-	// slack_token := os.Getenv("SLACK_TOKEN")
-	// slack_outgoing_token := os.Getenv("SLACK_OUTGOING_TOKEN")
-	slack_url := os.Getenv("SLACK_URL")
-
-	payload := Payload{
-		Text:      mes,
+func createSlackMessage(rawMessage string) string {
+	format := slackMessageFormat{
+		Text:      rawMessage,
 		Username:  "non",
 		IconEmoji: ":gopher:",
 		IconURL:   "",
 		Channel:   "",
 	}
 
-	jsonPayload, err := json.Marshal(payload)
+	json, err := json.Marshal(format)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
+	return string(json)
+}
 
-	resp, err := http.PostForm(slack_url, url.Values{"payload": {string(jsonPayload)}})
+func postToSlack(mes string) error {
+	// token := os.Getenv("SLACK_TOKEN")
+	// outtoken := os.Getenv("SLACK_OUTGOING_TOKEN")
+	payload := createSlackMessage(mes)
+
+	u := os.Getenv("SLACK_URL")
+	resp, err := http.PostForm(u, url.Values{"payload": {payload}})
 	if err != nil {
 		return err
 	}
@@ -47,10 +51,10 @@ func postToSlack(mes string) error {
 }
 
 func createBot() *linebot.Client {
-	line_secret := os.Getenv("LINE_SECRET")
-	line_token := os.Getenv("LINE_TOKEN")
+	secret := os.Getenv("LINE_SECRET")
+	token := os.Getenv("LINE_TOKEN")
 	bot, err := linebot.New(
-		line_secret, line_token,
+		secret, token,
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -59,7 +63,6 @@ func createBot() *linebot.Client {
 }
 
 func main() {
-	line_user_id := os.Getenv("LINE_USER_ID")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -71,9 +74,10 @@ func main() {
 	r.Use(gin.Logger())
 
 	// slack to line
+	uid := os.Getenv("LINE_USER_ID")
 	r.POST("/send", func(c *gin.Context) {
 		raw := c.PostForm("text")
-		bot.PushMessage(line_user_id, linebot.NewTextMessage(raw)).Do()
+		bot.PushMessage(uid, linebot.NewTextMessage(raw)).Do()
 	})
 
 	// line to slack
