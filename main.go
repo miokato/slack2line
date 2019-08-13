@@ -44,9 +44,19 @@ func HttpPost(mes string, slack_url string) error {
 	return err
 }
 
-func main() {
+func createBot() *linebot.Client {
 	line_secret := os.Getenv("LINE_SECRET")
 	line_token := os.Getenv("LINE_TOKEN")
+	bot, err := linebot.New(
+		line_secret, line_token,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bot
+}
+
+func main() {
 	line_user_id := os.Getenv("LINE_USER_ID")
 	slack_token := os.Getenv("SLACK_TOKEN")
 	slack_outgoing_token := os.Getenv("SLACK_OUTGOING_TOKEN")
@@ -57,12 +67,7 @@ func main() {
 	}
 	fmt.Println(slack_token, slack_outgoing_token)
 
-	bot, err := linebot.New(
-		line_secret, line_token,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	bot := createBot()
 
 	r := gin.New()
 	r.Use(gin.Logger())
