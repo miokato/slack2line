@@ -11,6 +11,18 @@ import (
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
+func createBot() *linebot.Client {
+	secret := os.Getenv("LINE_SECRET")
+	token := os.Getenv("LINE_TOKEN")
+	bot, err := linebot.New(
+		secret, token,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bot
+}
+
 type slackMessageFormat struct {
 	Text      string `json:"text"`
 	Username  string `json: "username"`
@@ -50,16 +62,12 @@ func postToSlack(mes string) error {
 	return err
 }
 
-func createBot() *linebot.Client {
-	secret := os.Getenv("LINE_SECRET")
-	token := os.Getenv("LINE_TOKEN")
-	bot, err := linebot.New(
-		secret, token,
-	)
+func postToLine(bot *linebot.Client, mes string) {
+	uid := os.Getenv("LINE_USER_ID")
+	_, err := bot.PushMessage(uid, linebot.NewTextMessage(mes)).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return bot
 }
 
 func main() {
@@ -76,11 +84,7 @@ func main() {
 	// slack to line
 	r.POST("/send", func(c *gin.Context) {
 		raw := c.PostForm("text")
-		uid := os.Getenv("LINE_USER_ID")
-		_, err := bot.PushMessage(uid, linebot.NewTextMessage(raw)).Do()
-		if err != nil {
-			log.Fatal(err)
-		}
+		postToLine(bot, raw)
 	})
 
 	// line to slack
@@ -88,10 +92,10 @@ func main() {
 		events, err := bot.ParseRequest(c.Request)
 		if err != nil {
 			if err == linebot.ErrInvalidSignature {
-				log.Print(err)
+				log.Fatal(err)
 			}
-			return
 		}
+
 		for _, event := range events {
 			if event.Type == linebot.EventTypeMessage {
 				switch message := event.Message.(type) {
