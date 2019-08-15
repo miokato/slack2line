@@ -77,7 +77,10 @@ func main() {
 	r.POST("/send", func(c *gin.Context) {
 		raw := c.PostForm("text")
 		uid := os.Getenv("LINE_USER_ID")
-		bot.PushMessage(uid, linebot.NewTextMessage(raw)).Do()
+		_, err := bot.PushMessage(uid, linebot.NewTextMessage(raw)).Do()
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
 	// line to slack
